@@ -5,20 +5,20 @@
 <!-- =================================================================================== -->
 <robot name="vx300s">
   <material name="interbotix_black">
-    <texture filename="./meshes/interbotix_black.png"/>
+    <texture filename="./meshes/vx300s_meshes/interbotix_black.png"/>
   </material>
-  <link name="vx300s/base_link">
+  <link name="vx300s_base_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_1_base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_1_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_1_base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_1_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -31,8 +31,8 @@
     <axis xyz="0 0 1"/>
     <limit effort="10" lower="-3.141582653589793" upper="3.141582653589793" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0 0 0.079"/>
-    <parent link="vx300s/base_link"/>
-    <child link="vx300s/shoulder_link"/>
+    <parent link="vx300s_base_link"/>
+    <child link="vx300s_shoulder_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <transmission name="trans_waist">
@@ -44,18 +44,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/shoulder_link">
+  <link name="vx300s_shoulder_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 -0.003"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 -0.003"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -68,8 +68,8 @@
     <axis xyz="0 1 0"/>
     <limit effort="20" lower="-1.8500490071139892" upper="1.2566370614359172" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0 0 0.04805"/>
-    <parent link="vx300s/shoulder_link"/>
-    <child link="vx300s/upper_arm_link"/>
+    <parent link="vx300s_shoulder_link"/>
+    <child link="vx300s_upper_arm_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <transmission name="trans_shoulder">
@@ -81,18 +81,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/upper_arm_link">
+  <link name="vx300s_upper_arm_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -105,8 +105,8 @@
     <axis xyz="0 1 0"/>
     <limit effort="15" lower="-1.7627825445142729" upper="1.6057029118347832" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0.05955 0 0.3"/>
-    <parent link="vx300s/upper_arm_link"/>
-    <child link="vx300s/upper_forearm_link"/>
+    <parent link="vx300s_upper_arm_link"/>
+    <child link="vx300s_upper_forearm_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <transmission name="trans_elbow">
@@ -118,18 +118,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/upper_forearm_link">
+  <link name="vx300s_upper_forearm_link">
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -142,8 +142,8 @@
     <axis xyz="1 0 0"/>
     <limit effort="2" lower="-3.141582653589793" upper="3.141582653589793" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0.2 0 0"/>
-    <parent link="vx300s/upper_forearm_link"/>
-    <child link="vx300s/lower_forearm_link"/>
+    <parent link="vx300s_upper_forearm_link"/>
+    <child link="vx300s_lower_forearm_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <transmission name="trans_forearm_roll">
@@ -155,18 +155,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/lower_forearm_link">
+  <link name="vx300s_lower_forearm_link">
     <visual>
       <origin rpy="3.141592653589793 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="3.141592653589793 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -179,8 +179,8 @@
     <axis xyz="0 1 0"/>
     <limit effort="5" lower="-1.8675022996339325" upper="2.234021442552742" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0.1 0 0"/>
-    <parent link="vx300s/lower_forearm_link"/>
-    <child link="vx300s/wrist_link"/>
+    <parent link="vx300s_lower_forearm_link"/>
+    <child link="vx300s_wrist_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <transmission name="trans_wrist_angle">
@@ -192,18 +192,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/wrist_link">
+  <link name="vx300s_wrist_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -216,8 +216,8 @@
     <axis xyz="1 0 0"/>
     <limit effort="1" lower="-3.141582653589793" upper="3.141582653589793" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0.069744 0 0"/>
-    <parent link="vx300s/wrist_link"/>
-    <child link="vx300s/gripper_link"/>
+    <parent link="vx300s_wrist_link"/>
+    <child link="vx300s_gripper_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <transmission name="trans_wrist_rotate">
@@ -229,18 +229,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/gripper_link">
+  <link name="vx300s_gripper_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.02 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.02 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -252,10 +252,10 @@
   <joint name="ee_arm" type="fixed">
     <axis xyz="1 0 0"/>
     <origin rpy="0 0 0" xyz="0.042825 0 0"/>
-    <parent link="vx300s/gripper_link"/>
-    <child link="vx300s/ee_arm_link"/>
+    <parent link="vx300s_gripper_link"/>
+    <child link="vx300s_ee_arm_link"/>
   </joint>
-  <link name="vx300s/ee_arm_link">
+  <link name="vx300s_ee_arm_link">
     <inertial>
       <mass value="0.001"/>
       <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
@@ -265,8 +265,8 @@
     <axis xyz="1 0 0"/>
     <limit effort="1" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0.005675 0 0"/>
-    <parent link="vx300s/ee_arm_link"/>
-    <child link="vx300s/gripper_prop_link"/>
+    <parent link="vx300s_ee_arm_link"/>
+    <child link="vx300s_gripper_prop_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <transmission name="trans_gripper">
@@ -278,18 +278,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/gripper_prop_link">
+  <link name="vx300s_gripper_prop_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.0685 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_8_gripper_prop.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_8_gripper_prop.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.0685 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_8_gripper_prop.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_8_gripper_prop.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -303,21 +303,21 @@
   <joint name="gripper_bar" type="fixed">
     <axis xyz="1 0 0"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="vx300s/ee_arm_link"/>
-    <child link="vx300s/gripper_bar_link"/>
+    <parent link="vx300s_ee_arm_link"/>
+    <child link="vx300s_gripper_bar_link"/>
   </joint>
-  <link name="vx300s/gripper_bar_link">
+  <link name="vx300s_gripper_bar_link">
     <visual>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.063 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.063 0 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -329,10 +329,10 @@
   <joint name="ee_bar" type="fixed">
     <axis xyz="1 0 0"/>
     <origin rpy="0 0 0" xyz="0.025875 0 0"/>
-    <parent link="vx300s/gripper_bar_link"/>
-    <child link="vx300s/fingers_link"/>
+    <parent link="vx300s_gripper_bar_link"/>
+    <child link="vx300s_fingers_link"/>
   </joint>
-  <link name="vx300s/fingers_link">
+  <link name="vx300s_fingers_link">
     <inertial>
       <mass value="0.001"/>
       <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
@@ -343,8 +343,8 @@
     <axis xyz="0 1 0"/>
     <limit effort="5" lower="0.021" upper="0.057" velocity="1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="vx300s/fingers_link"/>
-    <child link="vx300s/left_finger_link"/>
+    <parent link="vx300s_fingers_link"/>
+    <child link="vx300s_left_finger_link"/>
     <dynamics friction="0.1"/>
   </joint>
   <transmission name="trans_left_finger">
@@ -356,18 +356,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/left_finger_link">
+  <link name="vx300s_left_finger_link">
     <visual>
       <origin rpy="1.5707963267948966 -3.141592653589793 1.5707963267948966" xyz="-0.0404 -0.0575 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="1.5707963267948966 -3.141592653589793 1.5707963267948966" xyz="-0.0404 -0.0575 0"/>
       <geometry>
-        <mesh filename="./meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -380,8 +380,8 @@
     <axis xyz="0 1 0"/>
     <limit effort="5" lower="-0.057" upper="-0.021" velocity="1"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="vx300s/fingers_link"/>
-    <child link="vx300s/right_finger_link"/>
+    <parent link="vx300s_fingers_link"/>
+    <child link="vx300s_right_finger_link"/>
     <dynamics friction="0.1"/>
     <mimic joint="left_finger" multiplier="-1" offset="0"/>
   </joint>
@@ -394,18 +394,18 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <link name="vx300s/right_finger_link">
+  <link name="vx300s_right_finger_link">
     <visual>
       <origin rpy="-1.5707963267948966 3.141592653589793 -1.5707963267948966" xyz="-0.0404 0.0575 0 "/>
       <geometry>
-        <mesh filename="./meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="interbotix_black"/>
     </visual>
     <collision>
       <origin rpy="-1.5707963267948966 3.141592653589793 -1.5707963267948966" xyz="-0.0404 0.0575 0 "/>
       <geometry>
-        <mesh filename="./meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/vx300s_meshes/vx300s_10_gripper_finger.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <inertial>
@@ -417,10 +417,10 @@
   <joint name="ee_gripper" type="fixed">
     <axis xyz="1 0 0"/>
     <origin rpy="0 0 0" xyz="0.0385 0 0"/>
-    <parent link="vx300s/fingers_link"/>
-    <child link="vx300s/ee_gripper_link"/>
+    <parent link="vx300s_fingers_link"/>
+    <child link="vx300s_ee_gripper_link"/>
   </joint>
-  <link name="vx300s/ee_gripper_link">
+  <link name="vx300s_ee_gripper_link">
     <inertial>
       <mass value="0.001"/>
       <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
