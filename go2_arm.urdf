@@ -1398,12 +1398,6 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
       <material name="interbotix_black"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="./meshes/vx300s_meshes/vx300s_1_base_trimmed.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
     <inertial>
       <origin rpy="0 0 1.5707963267948966" xyz="-0.0534774000 -0.0005625750 0.0205961000"/>
       <mass value="0.969034"/>
@@ -1435,12 +1429,6 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
       <material name="interbotix_black"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 1.5707963267948966" xyz="0 0 -0.003"/>
-      <geometry>
-        <mesh filename="./meshes/vx300s_meshes/vx300s_2_shoulder.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
     <inertial>
       <origin rpy="0 0 1.5707963267948966" xyz="0.0002592330 -0.0000033552 0.0116129000"/>
       <mass value="0.798614"/>
@@ -1472,12 +1460,6 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
       <material name="interbotix_black"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="./meshes/vx300s_meshes/vx300s_3_upper_arm.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
     <inertial>
       <origin rpy="0 0 1.5707963267948966" xyz="0.0206949000 0.0000000004 0.2264590000"/>
       <mass value="0.792592"/>
@@ -1509,12 +1491,6 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
       <material name="interbotix_black"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="./meshes/vx300s_meshes/vx300s_4_upper_forearm.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
     <inertial>
       <origin rpy="0 0 0" xyz="0.105723 0 0"/>
       <mass value="0.322228"/>
@@ -1546,12 +1522,6 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
       <material name="interbotix_black"/>
     </visual>
-    <collision>
-      <origin rpy="3.141592653589793 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="./meshes/vx300s_meshes/vx300s_5_lower_forearm.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
     <inertial>
       <origin rpy="3.141592653589793 0 0" xyz="0.0513477000 0.0068046200 0"/>
       <mass value="0.414823"/>
@@ -1583,12 +1553,6 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
       <material name="interbotix_black"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 1.5707963267948966" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="./meshes/vx300s_meshes/vx300s_6_wrist.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
     <inertial>
       <origin rpy="0 0 1.5707963267948966" xyz="0.0467430000 -0.0000076652 0.0105650000"/>
       <mass value="0.115395"/>
@@ -1620,12 +1584,6 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
       <material name="interbotix_black"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 1.5707963267948966" xyz="-0.02 0 0"/>
-      <geometry>
-        <mesh filename="./meshes/vx300s_meshes/vx300s_7_gripper.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
     <inertial>
       <origin rpy="0 0 1.5707963267948966" xyz="0.0230010000 0.0000000000 0.0115230000"/>
       <mass value="0.097666"/>
@@ -1669,12 +1627,6 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
       <material name="interbotix_black"/>
     </visual>
-    <collision>
-      <origin rpy="0 0 1.5707963267948966" xyz="-0.063 0 0"/>
-      <geometry>
-        <mesh filename="./meshes/vx300s_meshes/vx300s_9_gripper_bar.stl" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </collision>
     <inertial>
       <origin rpy="0 0 1.5707963267948966" xyz="0.0067940000 -0.0000004272 -0.0007760000"/>
       <mass value="0.150986"/>
