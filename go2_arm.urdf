@@ -1681,9 +1681,4 @@ Stephen Brawner (brawner@gmail.com)
       <inertia ixx="0.0000789500" ixy="-0.0000000012" ixz="0.0000001341" iyy="0.0003283000" iyz="0.0000017465" izz="0.0003095000"/>
     </inertial>
   </link>
-  <joint name="ee_bar_arm_joint" type="fixed">
-    <axis xyz="1 0 0"/>
-    <origin rpy="0 0 0" xyz="0.025875 0 0"/>
-    <parent link="vx300s_gripper_bar_link"/>
-  </joint>
 </robot>
