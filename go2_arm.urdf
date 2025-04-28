@@ -218,7 +218,7 @@ Stephen Brawner (brawner@gmail.com)
     <collision>
       <origin rpy="0 1.5707963267948966 0" xyz="0 0 -0.1065" />
       <geometry>
-        <box size="0.213 0.0245 0.034" />
+        <box size="0.11 0.0245 0.034" />
       </geometry>
     </collision>
   </link>
@@ -513,7 +513,7 @@ Stephen Brawner (brawner@gmail.com)
     <collision>
       <origin rpy="0 1.5707963267948966 0" xyz="0 0 -0.1065" />
       <geometry>
-        <box size="0.213 0.0245 0.034" />
+        <box size="0.11 0.0245 0.034" />
       </geometry>
     </collision>
   </link>
@@ -808,7 +808,7 @@ Stephen Brawner (brawner@gmail.com)
     <collision>
       <origin rpy="0 1.5707963267948966 0" xyz="0 0 -0.1065" />
       <geometry>
-        <box size="0.213 0.0245 0.034" />
+        <box size="0.11 0.0245 0.034" />
       </geometry>
     </collision>
   </link>
@@ -1103,7 +1103,7 @@ Stephen Brawner (brawner@gmail.com)
     <collision>
       <origin rpy="0 1.5707963267948966 0" xyz="0 0 -0.1065" />
       <geometry>
-        <box size="0.213 0.0245 0.034" />
+        <box size="0.11 0.0245 0.034" />
       </geometry>
     </collision>
   </link>
