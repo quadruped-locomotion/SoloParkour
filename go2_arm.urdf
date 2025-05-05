@@ -1561,7 +1561,7 @@ Stephen Brawner (brawner@gmail.com)
   </link>
   <joint name="wrist_rotate_arm_joint" type="revolute">
     <axis xyz="1 0 0"/>
-    <limit effort="1" lower="-3.141582653589793" upper="3.141582653589793" velocity="3.141592653589793"/>
+    <limit effort="1" lower="-6.28318530718" upper="6.28318530718" velocity="3.141592653589793"/>
     <origin rpy="0 0 0" xyz="0.069744 0 0"/>
     <parent link="vx300s_wrist_link"/>
     <child link="vx300s_gripper_link"/>
