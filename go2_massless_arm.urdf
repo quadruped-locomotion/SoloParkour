@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by
-Stephen Brawner (brawner@gmail.com) 
+Stephen Brawner (brawner@gmail.com)
      Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
      For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
 <robot
@@ -1358,33 +1358,33 @@ Stephen Brawner (brawner@gmail.com)
     <axis
       xyz="0 0 0" />
   </joint>
-  <joint 
-    name="front_camera_joint" 
+  <joint
+    name="front_camera_joint"
     type="fixed">
-    <origin 
-      rpy="0 0 0" 
+    <origin
+      rpy="0 0 0"
       xyz="0.32715 -0.00003 0.04297"/>
-      <parent 
+      <parent
         link="base"/>
-      <child 
+      <child
       link="front_camera"/>
   </joint>
-  <link 
+  <link
     name="front_camera">
   </link>
 
 
 
   <!-- ARM description -->
-  <joint 
+  <joint
     name="mount_arm_joint"
     type="fixed">
-    <origin 
-      rpy="0 0 0" 
+    <origin
+      rpy="0 0 0"
       xyz="0.0 0.0 0.05"/>
-      <parent 
+      <parent
         link="base"/>
-      <child 
+      <child
       link="vx300s_base_link"/>
   </joint>
   <material name="interbotix_black">
