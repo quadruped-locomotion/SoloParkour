@@ -1376,11 +1376,16 @@ Stephen Brawner (brawner@gmail.com)
     <child link="shoulder_to_elbow_motor_v1_1"/>
     <axis xyz="1.0 0.0 0.0"/>
   </joint>
-  <joint name="wrist_angle_arm_joint" type="fixed">
+  <joint name="wrist_angle_arm_joint" type="revolute">
     <origin rpy="0 0 0" xyz="-0.03375 0.0148 0.1083"/>
     <parent link="shoulder_to_elbow_motor_v1_1"/>
     <child link="elbow_to_wrist_motor_reference_v1_1"/>
     <axis xyz="1.0 -0.0 0.0"/>
+    <limit
+      lower="-1.0472"
+      upper="1.0472"
+      effort="23.7"
+      velocity="30.1" />
   </joint>
   <joint name="wrist_rotate_arm_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0.013407 0.044938 -1.3e-05"/>
