@@ -1229,8 +1229,6 @@ Stephen Brawner (brawner@gmail.com)
     name="front_camera">
   </link>
 
-
-
   <!-- ARM description -->
   <joint
     name="mount_arm_joint"
@@ -1275,14 +1273,14 @@ Stephen Brawner (brawner@gmail.com)
     <visual>
       <origin rpy="0 0 0" xyz="-0.00025 -0.06875 -0.0409"/>
       <geometry>
-        <mesh filename="./meshes/first-bracket-motor_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/first_bracket_motor_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="-0.00025 -0.06875 -0.0409"/>
       <geometry>
-        <mesh filename="./meshes/first-bracket-motor_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/first_bracket_motor_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1295,14 +1293,14 @@ Stephen Brawner (brawner@gmail.com)
     <visual>
       <origin rpy="0 0 0" xyz="-0.01945 -0.06895 -0.05515"/>
       <geometry>
-        <mesh filename="./meshes/shoulder-to-elbow-motor_v1_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/shoulder_to_elbow_motor_v1_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="-0.01945 -0.06895 -0.05515"/>
       <geometry>
-        <mesh filename="./meshes/shoulder-to-elbow-motor_v1_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/shoulder_to_elbow_motor_v1_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1315,14 +1313,14 @@ Stephen Brawner (brawner@gmail.com)
     <visual>
       <origin rpy="0 0 0" xyz="0.0143 -0.08375 -0.16345"/>
       <geometry>
-        <mesh filename="./meshes/elbow-to-wrist-motor-reference_v1_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/elbow_to_wrist_motor_reference_v1_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0.0143 -0.08375 -0.16345"/>
       <geometry>
-        <mesh filename="./meshes/elbow-to-wrist-motor-reference_v1_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/elbow_to_wrist_motor_reference_v1_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1335,14 +1333,14 @@ Stephen Brawner (brawner@gmail.com)
     <visual>
       <origin rpy="0 0 0" xyz="0.000893 -0.128688 -0.163437"/>
       <geometry>
-        <mesh filename="./meshes/gripper-static-motor_v2_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/gripper_static_motor_v2_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0.000893 -0.128688 -0.163437"/>
       <geometry>
-        <mesh filename="./meshes/gripper-static-motor_v2_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/gripper_static_motor_v2_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
@@ -1355,14 +1353,14 @@ Stephen Brawner (brawner@gmail.com)
     <visual>
       <origin rpy="0 0 0" xyz="0.008443 -0.141678 -0.177687"/>
       <geometry>
-        <mesh filename="./meshes/gripper-moving-part-dumb_v2_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/gripper_moving_part_dumb_v2_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0.008443 -0.141678 -0.177687"/>
       <geometry>
-        <mesh filename="./meshes/gripper-moving-part-dumb_v2_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="./meshes/gripper_moving_part_dumb_v2_1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
   </link>
