@@ -1246,56 +1246,6 @@ Stephen Brawner (brawner@gmail.com)
   <material name="silver">
     <color rgba="0.700 0.700 0.700 1.000"/>
   </material>
-  <transmission name="Revolute 2_tran">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="Revolute 2">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="Revolute 2_actr">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  <transmission name="Revolute 3_tran">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="Revolute 3">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="Revolute 3_actr">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  <transmission name="Revolute 5_tran">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="Revolute 5">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="Revolute 5_actr">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  <transmission name="Revolute 6_tran">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="Revolute 6">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="Revolute 6_actr">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  <transmission name="Revolute 7_tran">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="Revolute 7">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="Revolute 7_actr">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
   <link name="base_link">
     <inertial>
       <origin rpy="0 0 0" xyz="-1.6196165020213455e-05 0.04676572591178276 0.014449624355634582"/>
@@ -1316,7 +1266,7 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
     </collision>
   </link>
-  <link name="first-bracket-motor_1">
+  <link name="first_bracket_motor_1">
     <inertial>
       <origin rpy="0 0 0" xyz="0.0011215335520915035 -0.011960095984038348 0.012424221873872536"/>
       <mass value="0.050669759178187244"/>
@@ -1336,7 +1286,7 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
     </collision>
   </link>
-  <link name="shoulder-to-elbow-motor_v1_1">
+  <link name="shoulder_to_elbow_motor_v1_1">
     <inertial>
       <origin rpy="0 0 0" xyz="-0.0191542760740305 -0.0012683813577475112 0.07144141167892787"/>
       <mass value="0.05261369068977079"/>
@@ -1356,7 +1306,7 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
     </collision>
   </link>
-  <link name="elbow-to-wrist-motor-reference_v1_1">
+  <link name="elbow_to_wrist_motor_reference_v1_1">
     <inertial>
       <origin rpy="0 0 0" xyz="0.01951468809363352 0.026076660011439212 2.3261768583027198e-05"/>
       <mass value="0.02059907441055582"/>
@@ -1376,7 +1326,7 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
     </collision>
   </link>
-  <link name="gripper-static-motor_v2_1">
+  <link name="gripper_static_motor_v2_1">
     <inertial>
       <origin rpy="0 0 0" xyz="0.005421565533833407 0.019034667992307075 0.00011281388318701291"/>
       <mass value="0.030801959916802346"/>
@@ -1396,7 +1346,7 @@ Stephen Brawner (brawner@gmail.com)
       </geometry>
     </collision>
   </link>
-  <link name="gripper-moving-part-dumb_v2_1">
+  <link name="gripper_moving_part_dumb_v2_1">
     <inertial>
       <origin rpy="0 0 0" xyz="0.001094897934895013 0.025115003984107043 -0.01445125352746443"/>
       <mass value="0.013583445641331692"/>
@@ -1419,31 +1369,31 @@ Stephen Brawner (brawner@gmail.com)
   <joint name="waist_arm_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0.00025 0.06875 0.0409"/>
     <parent link="base_link"/>
-    <child link="first-bracket-motor_1"/>
+    <child link="first_bracket_motor_1"/>
     <axis xyz="0.0 0.0 1.0"/>
   </joint>
   <joint name="shoulder_arm_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0.0192 0.0002 0.01425"/>
-    <parent link="first-bracket-motor_1"/>
-    <child link="shoulder-to-elbow-motor_v1_1"/>
+    <parent link="first_bracket_motor_1"/>
+    <child link="shoulder_to_elbow_motor_v1_1"/>
     <axis xyz="1.0 0.0 0.0"/>
   </joint>
   <joint name="wrist_angle_arm_joint" type="fixed">
     <origin rpy="0 0 0" xyz="-0.03375 0.0148 0.1083"/>
-    <parent link="shoulder-to-elbow-motor_v1_1"/>
-    <child link="elbow-to-wrist-motor-reference_v1_1"/>
+    <parent link="shoulder_to_elbow_motor_v1_1"/>
+    <child link="elbow_to_wrist_motor_reference_v1_1"/>
     <axis xyz="1.0 -0.0 0.0"/>
   </joint>
   <joint name="wrist_rotate_arm_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0.013407 0.044938 -1.3e-05"/>
-    <parent link="elbow-to-wrist-motor-reference_v1_1"/>
-    <child link="gripper-static-motor_v2_1"/>
+    <parent link="elbow_to_wrist_motor_reference_v1_1"/>
+    <child link="gripper_static_motor_v2_1"/>
     <axis xyz="-0.0 -1.0 0.0"/>
   </joint>
   <joint name="gripper_arm_joint" type="fixed">
     <origin rpy="0 0 0" xyz="-0.00755 0.01299 0.01425"/>
-    <parent link="gripper-static-motor_v2_1"/>
-    <child link="gripper-moving-part-dumb_v2_1"/>
+    <parent link="gripper_static_motor_v2_1"/>
+    <child link="gripper_moving_part_dumb_v2_1"/>
     <axis xyz="-0.0 -0.0 -1.0"/>
   </joint>
 </robot>
