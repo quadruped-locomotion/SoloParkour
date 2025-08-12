@@ -139,14 +139,14 @@ env:
 
     # observations
     observe:
-      base_lin_vel: false
+      base_lin_vel: true
       base_ang_vel: true
       commands: true
       misc: true
-      heights: true 
       ceilings: true
       phases: false
       imu: false
+      heights: true 
     measured_points_step: 0.08
     measured_points_x: [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     measured_points_y: [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
