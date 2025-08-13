@@ -20,6 +20,8 @@ import torch.optim as optim
 from torch.distributions.normal import Normal
 from torch.utils.tensorboard import SummaryWriter
 
+from typing import Tuple
+
 class SeqReplayBufferSamples(NamedTuple):
     observations: torch.Tensor
     privileged_observations: torch.Tensor
@@ -109,7 +111,6 @@ class SeqReplayBuffer():
         cat_done,
         raw_constraints,
         done,
-        p_ini_hidden_in,
         truncateds = None
     ):
         start_idx = self.pos
@@ -142,7 +143,6 @@ class SeqReplayBuffer():
         self.cat_dones[start_idx : stop_idx] = cat_done[: b_max_idx].clone().to(self.storing_device)
         self.raw_constraints[start_idx : stop_idx] = raw_constraints[: b_max_idx].clone().to(self.storing_device)
         self.dones[start_idx : stop_idx] = done[: b_max_idx].clone().to(self.storing_device)
-        self.p_ini_hidden_in[start_idx : stop_idx] = p_ini_hidden_in.swapaxes(0, 1)[: b_max_idx].clone().to(self.storing_device)
 
         # Current episodes last transition marker
         self.markers[start_idx : stop_idx] = 1
@@ -177,7 +177,6 @@ class SeqReplayBuffer():
             self.cat_dones[: overflow_size] = cat_done[b_max_idx :].clone().to(self.storing_device)
             self.raw_constraints[: overflow_size] = raw_constraints[b_max_idx :].clone().to(self.storing_device)
             self.dones[: overflow_size] = done[b_max_idx :].clone().to(self.storing_device)
-            self.p_ini_hidden_in[: overflow_size] = p_ini_hidden_in.swapaxes(0, 1)[b_max_idx :].clone().to(self.storing_device)
 
             # Current episodes last transition marker
             self.markers[: overflow_size] = 1
@@ -294,51 +293,6 @@ def random_cutout(images, min_size=2, max_size=24):
             images[i, :, top:top + size_h, left:left + size_w] = fill_value
     return images
 
-class DepthOnlyFCBackbone58x87(nn.Module):
-    def __init__(self, scandots_output_dim, seq_len, batch_size):
-        super().__init__()
-
-        activation = nn.ELU()
-        self.image_compression = nn.Sequential(
-            nn.Conv2d(1, 16, 5), nn.LeakyReLU(), nn.MaxPool2d(2),
-            nn.Conv2d(16, 32, 4), nn.LeakyReLU(), nn.MaxPool2d(2),
-            nn.Conv2d(32, 32, 3), nn.LeakyReLU(),
-            nn.Flatten(),
-            nn.Linear(1568, scandots_output_dim), # 48x48
-            nn.LeakyReLU(),
-            nn.Linear(128, scandots_output_dim)
-        )
-
-        self.output_activation = activation
-
-    def forward(self, vobs, hist = True, augment = False):
-        bs, seql, w, h = vobs.size()
-
-        vobs = vobs.view(-1, 1, w, h)
-        if augment:
-            vobs = random_cutout(random_noise(random_shift(vobs)))
-
-        vision_latent = self.output_activation(self.image_compression(vobs))
-        vision_latent = vision_latent.view(bs, seql, 128)
-
-        if hist:
-            vision_latent = vision_latent.repeat_interleave(5, axis = 1)
-
-        return vision_latent
-
-class ExtraCorpusQMemory(nn.Module):
-    def __init__(self, seq_len, batch_size):
-        super().__init__()
-        self.vision = DepthOnlyFCBackbone58x87(128, seq_len, batch_size)
-        self.memory = nn.GRU(128, hidden_size = 256, batch_first = True)
-
-    def forward(self, x, hidden_in):
-        if hidden_in is None:
-            raise NotImplementedError
-
-        vision_latent = self.vision(x)
-        time_latent, hidden_out = self.memory(vision_latent, hidden_in)
-        return time_latent, hidden_out
 
 class QNetworkVanilla(nn.Module):
     def __init__(self, env, device):
@@ -352,22 +306,127 @@ class QNetworkVanilla(nn.Module):
         self.ln3 = nn.LayerNorm(128)
         self.fc4 = nn.Linear(128, 1)
 
-    def forward(self, x, a, latent):
+    def forward(self, x, a):
         x = torch.cat([x, a], -1)
         x = F.elu(self.ln1(self.fc1(x)))
         x = F.elu(self.ln2(self.fc2(x)))
         x = F.elu(self.ln3(self.fc3(x)))
         x = self.fc4(x)
-        return x, None
+        return x
+
+
+class AttentionEncoder(nn.Module):
+    def __init__(
+        self,
+        envs,
+        exteroception_offset: int = 45,
+        exteroception_dims: Tuple[int, int] = (13, 11),
+        hidden_dim: int = 64,
+        activation: str = "elu",
+        conv_params: dict = {"kernel_size": 5, "stride": 1, "padding": "same"}  # Default parameters for convolution,
+    ):
+        """Attention-based encoder for proprioception and exteroception data.
+
+        The encoder can be used to model both the actor and critic networks in an actor-critic architecture.
+
+        Args:
+            num_obs (int): Dimension of the proprioception input.
+            exteroception_offset (int): Starting index of the exteroception in the input vector. We assume that the input will be a concatenation of proprioception and exteroception data.
+            exteroception_dims (tuple[int, int]): Dimensions of the exteroception input (dim1, dim2).
+            hidden_dim (int, optional): Dimension of the hidden layers. Defaults to 128.
+            activation (str, optional): Activation function to use. Defaults to "elu".
+            conv_params (dict, optional): Parameters for the convolutional layer. Defaults to {'kernel_size': 5, 'stride': 1}.
+
+        Raises:
+            AssertionError: If the exteroception dimensions are not divisible by the kernel size.
+        """
+        super().__init__()
+
+        self.exteroception_offset = exteroception_offset
+        self.exteroception_dims = exteroception_dims
+        self.num_patches = exteroception_dims[0] * exteroception_dims[1]
+        self.out_dim = hidden_dim + 45  # Output dimension is hidden_dim + proprioception dimension
+        self.height_points = envs.env.height_points[0, :, :2].clone() #.view(-1, exteroception_dims[0], exteroception_dims[1], 3)  # (num_envs, x, y, 3)
+
+        assert conv_params["padding"] == "same", \
+            "Padding must be set to 'same' to ensure the output dimensions match the input dimensions \
+            for the convolutional layers."
+
+        self.activation = nn.ELU() if activation == "elu" else nn.ReLU()
+        self.proprioception_encoder = nn.Linear(exteroception_offset, hidden_dim)
+
+        # Convolutional encoder for exteroception
+        self.conv = nn.Sequential(
+            nn.Conv2d(1, 16, **conv_params),
+            self.activation,
+            nn.Conv2d(16, hidden_dim - 2, **conv_params),
+            self.activation,
+            nn.Flatten(-2),  # Flatten the last two dimensions to get patches
+        )
+
+        self.attention = nn.MultiheadAttention(
+            embed_dim = hidden_dim,
+            num_heads = 16,
+            batch_first = True,
+        )
+
+        self.att_scores: torch.Tensor | None = None  # Placeholder for attention scores
+
+    def forward(self, input: torch.Tensor, need_weights: bool = False) -> torch.Tensor:
+        proprioception: torch.Tensor = input[:, :, :self.exteroception_offset]  # (num_envs, num_proprioception_obs)
+        exteroception: torch.Tensor = input[:, :, self.exteroception_offset+1:]  # (num_envs, num_exteroception_obs)
+        num_envs = input.shape[0]
+
+        proprioception = proprioception.view(
+            -1, self.exteroception_offset
+        )
+
+        exteroception = exteroception.view(
+            -1,
+            1,  # Channel dimension for convolution
+            self.exteroception_dims[0], # x-axis
+            self.exteroception_dims[1], # y-axis
+        )  # (num_envs * seq_len, x, y)
+
+        # Proprioception encoding
+        proprio_encoded = self.activation(self.proprioception_encoder(proprioception))
+
+        # Exteroception encoding
+        extero_encoded = self.conv(exteroception) # (num_envs * seq_len, hidden_dim, num_patches)
+        extero_encoded = extero_encoded.permute(0, 2, 1)  # (num_envs * seq_len, num_patches, hidden_dim - 2)
+        extero_encoded = torch.cat([extero_encoded, self.height_points.expand(extero_encoded.shape[0], -1, -1)], -1) # (num_envs * seq_len, num_patches, hidden_dim), add grid indices to the exteroception encoding
+
+        # Unsqueeze to add a target sequence length dimension for attention
+        proprio_encoded = proprio_encoded.unsqueeze(1)  # (num_envs * seq_len, 1, hidden_dim)
+
+        # Compute attention
+        att_output, self.att_scores = self.attention(
+            query = proprio_encoded,  # Query: (num_envs * seq_len, 1, hidden_dim)
+            key   = extero_encoded,   # Key (num_envs * seq_len, num_patches, hidden_dim)
+            value = extero_encoded,   # Value (num_envs * seq_len, num_patches, hidden_dim)
+            need_weights=need_weights
+        ) # Output shape: (num_envs * seq_len, 1, hidden_dim), (att_scores shape: (num_envs * seq_len, 1, num_patches)
+
+        out = torch.cat([att_output.squeeze((1,2)), proprioception], -1)
+        # Final output shape: (num_envs * seq_len, hidden_dim + num_proprioception_obs)
+
+        return out.view(num_envs, -1, out.shape[-1])  # Reshape to (num_envs, seq_len, hidden_dim + num_proprioception_obs)
 
 class Actor(nn.Module):
-    def __init__(self, env):
+    def __init__(self, encoder: AttentionEncoder, env):
         super().__init__()
-        self.memory = nn.GRU(128 + 45, hidden_size = 256, batch_first = True)
-        self.fc1 = nn.Linear(256, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc_mu = nn.Linear(128, np.prod(env.single_action_space.shape))
+        self.encoder = encoder
+        
+        num_actions = np.array(env.single_action_space.shape).prod()
+        self.model = nn.Sequential(
+            self.encoder,
+            nn.ELU(),
+            nn.Linear(encoder.out_dim, 256),
+            nn.ELU(),
+            nn.Linear(256, 256),
+            nn.ELU(),
+            nn.Linear(256, num_actions),
+        )
 
         # action rescaling
         self.register_buffer(
@@ -377,18 +436,9 @@ class Actor(nn.Module):
             "action_bias", torch.tensor((env.action_space.high + env.action_space.low) / 2.0, dtype=torch.float32)
         )
 
-    def forward(self, x, vision_latent, hidden_in):
-        if hidden_in is None:
-            raise NotImplementedError
-
-        x = torch.cat([x, vision_latent], -1)
-        time_latent, hidden_out = self.memory(x, hidden_in)
-        x = F.elu(self.fc1(time_latent))
-        x = F.elu(self.fc2(x))
-        x = F.elu(self.fc3(x))
-        x = torch.tanh(self.fc_mu(x))
-
-        return x * self.action_scale + self.action_bias, hidden_out, None
+    def forward(self, x):
+        x = self.model(x)
+        return x * self.action_scale + self.action_bias
 
 class ExtractObsWrapper(gym.ObservationWrapper):
     def observation(self, obs):
@@ -445,8 +495,8 @@ def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
     envs.single_action_space = envs.action_space
     envs.single_observation_space = envs.observation_space
 
-    vision_nn = DepthOnlyFCBackbone58x87(128, SEQ_LEN, BATCH_SIZE).to(device)
-    actor = Actor(envs).to(device)
+    encoder = AttentionEncoder(envs).to(device)
+    actor = Actor(encoder, envs).to(device)
 
     QNetwork = QNetworkVanilla
     qfs = [QNetwork(envs, device = device).to(device) for _ in range(CRITIC_NB)]
@@ -457,7 +507,7 @@ def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
     q_optimizer = optim.Adam(itertools.chain(*([q.parameters() for q in qfs])), lr=CRITIC_LEARNING_RATE)
     qf1 = QNetwork(envs, device = device).to(device)
     qf2 = QNetwork(envs, device = device).to(device)
-    actor_optimizer = optim.Adam(list(actor.parameters()) + list(vision_nn.parameters()), lr=ACTOR_LEARNING_RATE)
+    actor_optimizer = optim.Adam(list(actor.parameters()), lr=ACTOR_LEARNING_RATE)
 
     envs.single_observation_space.dtype = np.float32
     rb = SeqReplayBuffer(
@@ -486,21 +536,15 @@ def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
     isaac_env_steps = TOTAL_TIMESTEPS // envs.num_envs
     print(f"Starting training for {isaac_env_steps} isaac env steps")
 
-    gru_p_hidden_in = torch.zeros((actor.memory.num_layers, envs.num_envs, actor.memory.hidden_size), device = device) # p for policy
-    gru_p_hidden_out = gru_p_hidden_in.clone()
-
     true_steps_num = 0
     actor_training_step = 0
     for global_step in range(isaac_env_steps):
         # ALGO LOGIC: put action logic here
-        with torch.no_grad():
-            if global_step % 5 == 0:
-                vision_latent = vision_nn(vobs.unsqueeze(1), hist = False)
         if true_steps_num < LEARNING_STARTS:
             actions = torch.zeros((envs.num_envs, rb.action_dim), device = device).uniform_(-1, 1)
         else:
             with torch.no_grad():
-                actions, gru_p_hidden_out, _ = actor(obs.unsqueeze(1), vision_latent, gru_p_hidden_in)
+                actions = actor(obs_privi.unsqueeze(1))
                 actions = actions.squeeze(1)
 
         true_steps_num += envs.num_envs
@@ -515,16 +559,12 @@ def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
 
         real_next_obs_privi = next_obs_privi.clone()
         real_next_obs = next_obs.clone()
-        if(true_dones.any()):
-            true_dones_idx = torch.argwhere(true_dones).squeeze()
-            gru_p_hidden_out[:, true_dones_idx] = 0
 
         if "depth" in infos:
             next_vobs = infos["depth"].clone()[..., 19:-18]
 
         rb.add(obs, obs_privi, (vobs * 255).to(torch.uint8), real_next_obs, real_next_obs_privi, (next_vobs * 255).to(torch.uint8), \
-            actions, rewards, terminations, raw_constraints, true_dones, gru_p_hidden_in, truncateds)
-        gru_p_hidden_in = gru_p_hidden_out
+            actions, rewards, terminations, raw_constraints, true_dones, truncateds)
 
         if (global_step + 1) % 24 == 0:
             for el, v in zip(list(envs.episode_sums.keys())[:envs.numRewards], (torch.mean(envs.rew_mean_reset, dim=0)).tolist()):
@@ -573,20 +613,21 @@ def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
                         -NOISE_CLIP, NOISE_CLIP
                     ) #* actor.action_scale
 
-                    vlatent = vision_nn(data.vision_next_observations)
+                    # vlatent = vision_nn(data.vision_next_observations)
+                    vlatent = None
                     qvlatent = None
-                    next_state_actions, _, _ = actor(data.next_observations, vlatent, data.p_ini_hidden_out)
+                    next_state_actions = actor(data.privileged_next_observations)
                     next_state_actions = (next_state_actions + clipped_noise).clamp(
                         actions_min, actions_max
                     )
                     targets_selected = torch.randperm(CRITIC_NB)[:2]
-                    qf_next_targets = torch.stack([qf_targets[i](data.privileged_next_observations, next_state_actions, qvlatent)[0] for i in targets_selected])
+                    qf_next_targets = torch.stack([qf_targets[i](data.privileged_next_observations, next_state_actions) for i in targets_selected])
                     min_qf_next_target = qf_next_targets.min(dim = 0).values
                     next_q_value = (1 - recomputed_cat_dones.flatten()) * data.rewards.flatten() + (1 - recomputed_cat_dones.flatten()) * (1 - data.dones.flatten()) * GAMMA * (min_qf_next_target).view(-1)
 
                 true_samples_nb = data.mask.sum()
                 qvlatent = None
-                qf_a_values = torch.stack([qf(data.privileged_observations, data.actions, qvlatent)[0].view(-1) for qf in qfs])
+                qf_a_values = torch.stack([qf(data.privileged_observations, data.actions).view(-1) for qf in qfs])
                 qf_loss = (((qf_a_values - next_q_value.unsqueeze(0)) ** 2) * data.mask.view(-1).unsqueeze(0)).sum() / (true_samples_nb * CRITIC_NB)
 
                 # optimize the model
@@ -602,11 +643,11 @@ def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
 
                 if local_steps == 7:
                     actor_training_step += 1
-                    vlatent = vision_nn(data.vision_observations, augment = True)
+                    # vlatent = vision_nn(data.vision_observations, augment = True)
                     qvlatent = None
-                    diff_actions, _, recons_height_maps = actor(data.observations, vlatent, data.p_ini_hidden_in)
+                    diff_actions = actor(data.privileged_observations)
 
-                    qs = torch.stack([qf(data.privileged_observations, diff_actions, qvlatent)[0] for qf in qfs])
+                    qs = torch.stack([qf(data.privileged_observations, diff_actions) for qf in qfs])
                     actor_loss = -(qs.squeeze(-1) * data.mask.unsqueeze(0)).sum() / (true_samples_nb * CRITIC_NB)
                     final_loss = actor_loss
 
@@ -620,12 +661,12 @@ def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
 
         if (global_step + 1) % (500 * 24) == 0:
             model_path = f"{run_path}/cleanrl_model_e{(global_step + 1) // 24}.pt"
-            torch.save((actor.state_dict(), vision_nn.state_dict()), model_path)
+            torch.save((actor.state_dict()), model_path)
             print("Saved model checkpoint")
 
         if (global_step + 1) % (5 * 24) == 0:
             model_path = f"{run_path}/cleanrl_model.pt"
-            torch.save((actor.state_dict(), vision_nn.state_dict()), model_path)
+            torch.save((actor.state_dict()), model_path)
             print("Saved model")
 
 def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
