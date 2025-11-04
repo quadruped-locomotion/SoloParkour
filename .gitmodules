@@ -1,0 +1,3 @@
+[submodule "go2"]
+	path = go2
+	url = git@github.com:quadruped-locomotion/go2_arm.git
