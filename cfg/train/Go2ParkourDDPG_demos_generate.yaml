@@ -5,7 +5,7 @@ params:
     name: cat_ddpg_demos_generate_continuous
 
   config:
-    name: ${resolve_default:SoloParkour,${....experiment}}
+    name: ${resolve_default:Go2Parkour,${....experiment}}
     full_experiment_name: ${.name}
     env_name: rlgpu
     total_timesteps: 2e8

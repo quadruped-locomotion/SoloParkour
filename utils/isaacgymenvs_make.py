@@ -37,10 +37,10 @@ from hydra import compose, initialize
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 from isaacgymenvs.utils.reformat import omegaconf_to_dict
-from tasks.solo_parkour import SoloParkour
+from tasks.solo_parkour import Go2Parkour
 
 isaacgym_task_map = {
-    "SoloParkour": SoloParkour,
+    "Go2Parkour": Go2Parkour,
 }
 
 def make(

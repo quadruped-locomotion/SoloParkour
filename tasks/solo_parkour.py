@@ -14,7 +14,7 @@ from tasks.terrainParkour import Terrain
 from texttable import Texttable
 import itertools
 
-class SoloParkour(VecTask):
+class Go2Parkour(VecTask):
     """Environment to learn locomotion on complex terrains with the Solo-12 quadruped robot."""
 
     def __init__(self, cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render):

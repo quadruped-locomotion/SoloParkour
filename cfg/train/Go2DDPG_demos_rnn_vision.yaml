@@ -5,7 +5,7 @@ params:
     name: cat_ddpg_demos_rnn_vision_continuous
 
   config:
-    name: ${resolve_default:SoloParkour,${....experiment}}
+    name: ${resolve_default:Go2Parkour,${....experiment}}
     full_experiment_name: ${.name}
     env_name: rlgpu
     gamma: 0.99

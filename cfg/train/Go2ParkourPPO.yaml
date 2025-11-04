@@ -44,7 +44,7 @@ params:
   load_path: ${...checkpoint} # path to the checkpoint to load
 
   config:
-    name: ${resolve_default:SoloParkour,${....experiment}}
+    name: ${resolve_default:Go2Parkour,${....experiment}}
     full_experiment_name: ${.name}
     env_name: rlgpu
     ppo: True
@@ -79,7 +79,7 @@ params:
     max_epochs: ${resolve_default:20000,${....max_iterations}}
     save_best_after: 1000
     score_to_win: 2000000000
-    save_frequency: 1000
+    save_frequency: 10
     print_stats: False
 
     player:

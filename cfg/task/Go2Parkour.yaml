@@ -1,5 +1,5 @@
 # used to create the object
-name: SoloParkour
+name: Go2Parkour
 
 physics_engine: "physx"
 
@@ -84,9 +84,9 @@ env:
     HR_KFE: -1.2 # [rad]
 
   urdfAsset:
-    file: "solo12/solo12_mpi.urdf"
+    file: "go2/go2.urdf"
     baseName: base_link
-    footName: FOOT
+    footName: foot
     shinName: LOWER
     kneeName: UPPER
     collapseFixedJoints: True
