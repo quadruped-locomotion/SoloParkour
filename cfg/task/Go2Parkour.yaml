@@ -120,16 +120,16 @@ env:
 
     limits:
       torque: 30.0
-      acc: 800.0
-      vel: 16.0
-      action_rate: 80.0
-      base_orientation: 0.1
+      acc: 1600.0
+      vel: 32.0
+      action_rate: 160.0
+      base_orientation: 0.2
       foot_contact_force: 480.0
       HFE: 1.9
-      HFE_min: -0.2
-      HAA: 0.4
+      HFE_min: -0.3
+      HAA: 0.6
       min_base_height: 0.06
-      heading: 0.1
+      heading: 0.2
 
     # Other
     flatTerrainThreshold: 0.001
@@ -139,7 +139,7 @@ env:
 
     # observations
     observe:
-      base_lin_vel: false
+      base_lin_vel: true
       base_ang_vel: true
       commands: true
       misc: true
