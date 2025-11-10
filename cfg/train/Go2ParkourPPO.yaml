@@ -76,7 +76,7 @@ params:
     bounds_loss_coef: 0.
     kappa: 1.0
 
-    max_epochs: ${resolve_default:20000,${....max_iterations}}
+    max_epochs: ${resolve_default:40000,${....max_iterations}}
     save_best_after: 1000
     score_to_win: 2000000000
     save_frequency: 10
