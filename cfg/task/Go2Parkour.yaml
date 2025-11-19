@@ -161,7 +161,7 @@ env:
     imuAccelerationScale: 0.1
 
     # noise
-    addNoise: true
+    addNoise: false
     noiseLevel: 1.0 # scales other values
     dofPositionNoise: 0.01
     dofVelocityNoise: 0.2

@@ -394,6 +394,19 @@ class ExtractObsWrapper(gym.ObservationWrapper):
     def observation(self, obs):
         return obs["obs"]
 
+class VisualActor(nn.Module):
+    def __init__(self, actor_nn, vision_nn):
+        super().__init__()
+        self.actor_nn = actor_nn
+        self.vision_nn = vision_nn
+
+    def forward(self, obs, vobs, gru_p_hidden_in):
+        vision_latent = self.vision_nn(vobs, hist=False)
+        actions, gru_p_hidden_out, _ = self.actor_nn(obs, 
+                vision_latent, gru_p_hidden_in)
+
+        return actions, gru_p_hidden_out
+
 def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
     TOTAL_TIMESTEPS = int(cfg["train"]["params"]["config"]["total_timesteps"])
     CRITIC_LEARNING_RATE = cfg["train"]["params"]["config"]["critic_learning_rate"]
@@ -491,6 +504,10 @@ def DDPG_demos_rnn_vision(cfg: DictConfig, envs):
 
     true_steps_num = 0
     actor_training_step = 0
+    
+    # Manually load a model
+    # breakpoint()
+
     for global_step in range(isaac_env_steps):
         # ALGO LOGIC: put action logic here
         with torch.no_grad():
@@ -655,12 +672,17 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
     actor = Actor(envs).to(device)
     actor.load_state_dict(actor_sd)
 
+    vactor = VisualActor(actor, vision_nn)
     obs_privi = envs.reset()
     obs = obs_privi.clone()[:, : 45]
     vobs = torch.zeros((envs.num_envs, vis_h, vis_w), device = device)
     next_vobs = vobs.clone()
     vision_latent = None
     gru_p_hidden_in = torch.zeros((actor.memory.num_layers, envs.num_envs, actor.memory.hidden_size), device = device) # p for policy
+
+    import onnxruntime as rt
+    onnx_path = '/home/ugokbaka/Workspace/onnx-inference/data/visual_model.onnx'
+    session = rt.InferenceSession(onnx_path)
 
     if is_video_gen:
         depth_images = []
@@ -671,15 +693,28 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
                 vision_latent = vision_nn(vobs.unsqueeze(1), hist = False)
 
         with torch.no_grad():
+            inputs = {'gru_p_hidden_in': gru_p_hidden_in[:, :1].cpu().numpy(), 'vobs': vobs[:1].unsqueeze(0).cpu().numpy(), 'obs': obs[:1].unsqueeze(1).cpu().numpy()}
+
+            onnx_actions = session.run(['actions'], inputs)[0].squeeze() 
+
             actions, gru_p_hidden_out, _ = actor(obs.unsqueeze(1), vision_latent, gru_p_hidden_in)
             actions = actions.squeeze(1)
+            # vactions, _ = vactor(obs.unsqueeze(1), vobs.unsqueeze(1), gru_p_hidden_in)
+            # vactions = vactions.squeeze(1)
+            check = np.allclose(actions.cpu().numpy()[0], onnx_actions, atol=1e-2)
+            print(f"{actions.cpu().numpy()[0] - onnx_actions=}")
+            print(f"{check=}")
+            print(f"\n\n{actions.mean()=} {actions.min()=} {actions.max()=}")
 
         next_obs_privi, rewards, terminations, infos = envs.step(actions)
         next_obs = next_obs_privi.clone()[:, : 45]
         obs = next_obs
+        print(f"{obs[0, 24:36].mean()=} {obs[0, 24:36].min()=} {obs.max()=}")
+        print(f"{obs.mean()=} {obs.min()=} {obs.max()=}")
         if "depth" in infos:
             next_vobs = infos["depth"].clone()[..., 19:-18]
         vobs = next_vobs
+        print(f"{vobs.mean()=} {vobs.min()=} {vobs.max()=}\n\n")
         gru_p_hidden_in = gru_p_hidden_out
 
         if is_video_gen:

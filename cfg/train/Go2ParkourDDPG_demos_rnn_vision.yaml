@@ -23,4 +23,4 @@ params:
     demos_rb_path: "path/to/privileged/experience"
     horizon_length: 24 # 24 for t = 0.02 (decimation = 4)
 
-    max_epochs: 5000
+    max_epochs: 20000
