@@ -29,18 +29,18 @@ env:
     mapLength: 8.
     mapWidth: 4.
     numLevels: 10
-    numTerrains: 20
+    numTerrains: 1
 
     # tri mesh only:
     slopeTreshold: 0.2
 
     terrainProportions: # Proportions for each kind of terrain
-      gap_parkour: 0.55
-      jump_parkour: 0.3
+      gap_parkour: 0.0
+      jump_parkour: 0.0
       stairs_parkour: 0.0
-      hurdle_parkour: 0.1
-      crawl_parkour: 0.05
-      random_uniform: 0.0
+      hurdle_parkour: 0.0
+      crawl_parkour: 0.0
+      random_uniform: 1.0
 
   baseInitState:
     pos: [0.0, 0.0, 0.3] # x,y,z [m]
@@ -161,7 +161,7 @@ env:
     imuAccelerationScale: 0.1
 
     # noise
-    addNoise: false
+    addNoise: False
     noiseLevel: 1.0 # scales other values
     dofPositionNoise: 0.01
     dofVelocityNoise: 0.2

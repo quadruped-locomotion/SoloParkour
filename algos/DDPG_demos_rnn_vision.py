@@ -679,10 +679,14 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
     next_vobs = vobs.clone()
     vision_latent = None
     gru_p_hidden_in = torch.zeros((actor.memory.num_layers, envs.num_envs, actor.memory.hidden_size), device = device) # p for policy
-
+    old_actions = torch.zeros((envs.num_envs, envs.single_action_space.shape[0]), device = device)
     import onnxruntime as rt
     onnx_path = '/home/ugokbaka/Workspace/onnx-inference/data/visual_model.onnx'
     session = rt.InferenceSession(onnx_path)
+
+    # obs_buf = np.zeros((2000, 45))
+    act_buf = np.zeros((2000, 12))
+
 
     if is_video_gen:
         depth_images = []
@@ -695,17 +699,32 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
         with torch.no_grad():
             inputs = {'gru_p_hidden_in': gru_p_hidden_in[:, :1].cpu().numpy(), 'vobs': vobs[:1].unsqueeze(0).cpu().numpy(), 'obs': obs[:1].unsqueeze(1).cpu().numpy()}
 
-            onnx_actions = session.run(['actions'], inputs)[0].squeeze() 
+            actions, gru_p_hidden_out = session.run(['actions', 'gru_p_hidden_out'], inputs)[:2] 
+            act_buf[global_step, :] = actions.squeeze()[:]
+            actions = torch.Tensor(actions).cuda()
+            gru_p_hidden_out = torch.Tensor(gru_p_hidden_out).cuda()
+            # breakpoint()
 
-            actions, gru_p_hidden_out, _ = actor(obs.unsqueeze(1), vision_latent, gru_p_hidden_in)
+            # actions, gru_p_hidden_out, _ = actor(obs.unsqueeze(1), vision_latent, gru_p_hidden_in)
             actions = actions.squeeze(1)
             # vactions, _ = vactor(obs.unsqueeze(1), vobs.unsqueeze(1), gru_p_hidden_in)
             # vactions = vactions.squeeze(1)
-            check = np.allclose(actions.cpu().numpy()[0], onnx_actions, atol=1e-2)
-            print(f"{actions.cpu().numpy()[0] - onnx_actions=}")
-            print(f"{check=}")
+            # check = np.allclose(actions.cpu().numpy()[0], onnx_actions, atol=1e-2)
+            # print(f"{actions.cpu().numpy()[0] - onnx_actions=}")
+            # print(f"{check=}")
             print(f"\n\n{actions.mean()=} {actions.min()=} {actions.max()=}")
 
+            if False and hasattr(envs, 'base_lin_vel'):
+                assert (envs.observe_base_lin_vel()[0] == obs[0, :3]).all()
+                assert (envs.observe_base_ang_vel()[0] == obs[0, 3:6]).all()
+                assert (envs.observe_commands()[0] == obs[0, 6:9]).all()
+                assert (envs.projected_gravity[0] == obs[0, 9:12]).all()
+                assert (envs.dof_pos[0] == obs[0, 12:24]).all()
+                assert (old_actions[0, :9] == obs[0, -9:]).all()
+            # assert (envs.dof_vel == obs[0, 24:36]).all()
+            #breakpoint()
+
+        old_actions = actions
         next_obs_privi, rewards, terminations, infos = envs.step(actions)
         next_obs = next_obs_privi.clone()[:, : 45]
         obs = next_obs
@@ -737,3 +756,4 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
                 # Release the VideoWriter object
                 out.release()
                 print(f"Video saved to {output_file}")
+    breakpoint()
