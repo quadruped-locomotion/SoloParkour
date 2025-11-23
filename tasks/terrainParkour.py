@@ -183,7 +183,8 @@ class Terrain:
                     )
                     add_roughness(terrain, np.random.uniform(0.01, 0.03))
                 elif self.terrain_keys[k] == "random_uniform":                                                                                                                                                
-                    add_roughness(terrain, np.random.uniform(0.01, 0.03))
+                    pass
+                    # add_roughness(terrain, np.random.uniform(0.01, 0.03))
 
                 else:
                     # Flat ground

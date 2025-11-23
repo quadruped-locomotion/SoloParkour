@@ -670,9 +670,9 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
     vision_nn = DepthOnlyFCBackbone58x87(128, 0, 0).to(device)
     vision_nn.load_state_dict(vision_sd)
     actor = Actor(envs).to(device)
-    actor.load_state_dict(actor_sd)
+    # actor.load_state_dict(actor_sd)
 
-    vactor = VisualActor(actor, vision_nn)
+    # vactor = VisualActor(actor, vision_nn)
     obs_privi = envs.reset()
     obs = obs_privi.clone()[:, : 45]
     vobs = torch.zeros((envs.num_envs, vis_h, vis_w), device = device)
@@ -681,12 +681,13 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
     gru_p_hidden_in = torch.zeros((actor.memory.num_layers, envs.num_envs, actor.memory.hidden_size), device = device) # p for policy
     old_actions = torch.zeros((envs.num_envs, envs.single_action_space.shape[0]), device = device)
     import onnxruntime as rt
-    onnx_path = '/home/ugokbaka/Workspace/onnx-inference/data/visual_model.onnx'
+    onnx_path = '/home/hamlet/Workspace/onnx-inference/data/visual_model.onnx'
     session = rt.InferenceSession(onnx_path)
 
-    # obs_buf = np.zeros((2000, 45))
+    obs_buf = np.zeros((2000, 45))
     act_buf = np.zeros((2000, 12))
 
+    del actor
 
     if is_video_gen:
         depth_images = []
@@ -697,9 +698,13 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
                 vision_latent = vision_nn(vobs.unsqueeze(1), hist = False)
 
         with torch.no_grad():
-            inputs = {'gru_p_hidden_in': gru_p_hidden_in[:, :1].cpu().numpy(), 'vobs': vobs[:1].unsqueeze(0).cpu().numpy(), 'obs': obs[:1].unsqueeze(1).cpu().numpy()}
+            vobs_cpu = vobs[:1].cpu().numpy()
+            cv2.imshow('Camera feed', vobs_cpu.squeeze())
+            cv2.waitKey(1)
+            inputs = {'gru_p_hidden_in': gru_p_hidden_in[:, :1].cpu().numpy(), 'vobs': 0 * vobs_cpu[None, ...], 'obs': obs[:1].unsqueeze(1).cpu().numpy()}
 
             actions, gru_p_hidden_out = session.run(['actions', 'gru_p_hidden_out'], inputs)[:2] 
+            obs_buf[global_step, :] = obs.squeeze().cpu().numpy()[:]
             act_buf[global_step, :] = actions.squeeze()[:]
             actions = torch.Tensor(actions).cuda()
             gru_p_hidden_out = torch.Tensor(gru_p_hidden_out).cuda()
@@ -714,9 +719,9 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
             # print(f"{check=}")
             print(f"\n\n{actions.mean()=} {actions.min()=} {actions.max()=}")
 
-            if False and hasattr(envs, 'base_lin_vel'):
+            if True and hasattr(envs, 'base_lin_vel'):
                 assert (envs.observe_base_lin_vel()[0] == obs[0, :3]).all()
-                assert (envs.observe_base_ang_vel()[0] == obs[0, 3:6]).all()
+                # assert (envs.observe_base_ang_vel()[0] == obs[0, 3:6]).all()
                 assert (envs.observe_commands()[0] == obs[0, 6:9]).all()
                 assert (envs.projected_gravity[0] == obs[0, 9:12]).all()
                 assert (envs.dof_pos[0] == obs[0, 12:24]).all()

@@ -1098,7 +1098,6 @@ class Go2Parkour(VecTask):
 
         # There is self.decimation steps of simulation between each call to the policy
         for i in range(self.decimation):
-
             torques = torch.clip(
                 (
                     self.Kp
