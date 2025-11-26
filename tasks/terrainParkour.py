@@ -175,7 +175,7 @@ class Terrain:
                     )
                     add_roughness(terrain, np.random.uniform(0.01, 0.03))
                 elif self.terrain_keys[k] == "crawl_parkour":
-                    ceiling = 0.34 - 0.08*difficulty
+                    ceiling = 0.50 - 0.08*difficulty
                     boxes = crawl_parkour(
                         terrain,
                         lava_depth=lava_depth,
@@ -183,8 +183,7 @@ class Terrain:
                     )
                     add_roughness(terrain, np.random.uniform(0.01, 0.03))
                 elif self.terrain_keys[k] == "random_uniform":                                                                                                                                                
-                    pass
-                    # add_roughness(terrain, np.random.uniform(0.01, 0.03))
+                    add_roughness(terrain, np.random.uniform(0.01, 0.03))
 
                 else:
                     # Flat ground

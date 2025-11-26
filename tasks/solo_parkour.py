@@ -825,7 +825,7 @@ class Go2Parkour(VecTask):
         # Constraint to not fall outside of the tracj
         cstr_lava = self.root_states[:, 2] < -0.05
 
-        cstr_minbaseheight = (self.limits["min_base_height"] - self.root_states[:, 2]) * (self.ceilings >= 0.34).float()
+        cstr_minbaseheight = (self.limits["min_base_height"] - self.root_states[:, 2]) * (self.ceilings >= 0.50).float()
 
         cstr_foot_stumble = torch.norm(self.contact_forces[:, self.grf_indices, :2], dim=2) - 4.0*torch.abs(self.contact_forces[:, self.grf_indices, 2])
 
@@ -846,17 +846,17 @@ class Go2Parkour(VecTask):
         cstr_2footcontact = torch.abs((self.contact_forces[:, self.grf_indices, 2] > 1.0).sum(1) - 2.0)
 
         # Apply aesthetics constraints only on flat terrains
-        self.is_flat_terrain = (((self.measured_heights.var(1) < self.flat_terrain_threshold) & (self.ceilings >= 0.34)) | (self.terrain_levels <= 1)).float()
+        self.is_flat_terrain = (((self.measured_heights.var(1) < self.flat_terrain_threshold) & (self.ceilings >= 0.50)) | (self.terrain_levels <= 1)).float()
 
         cstr_base_orientation *= self.is_flat_terrain
 
         # We impose a certain walking style on flat surfaces to make the robot walk very nicely
         command_vel = torch.norm(self.commands[:, :2], dim=1)
-        cstr_2footcontact *= ((self.measured_heights.var(1) < self.flat_terrain_threshold) & (self.ceilings >= 0.34)).float()
+        cstr_2footcontact *= ((self.measured_heights.var(1) < self.flat_terrain_threshold) & (self.ceilings >= 0.50)).float()
         cstr_2footcontact *= (command_vel > self.vel_deadzone).float()
 
-        cstr_HFE_style *= ((self.ceilings >= 0.34) & (self.terrain_levels <= 4)).unsqueeze(1).float()
-        cstr_nomove *= ((self.measured_heights.var(1) < self.flat_terrain_threshold) & (self.ceilings >= 0.34)).float().unsqueeze(1)
+        cstr_HFE_style *= ((self.ceilings >= 0.50) & (self.terrain_levels <= 4)).unsqueeze(1).float()
+        cstr_nomove *= ((self.measured_heights.var(1) < self.flat_terrain_threshold) & (self.ceilings >= 0.50)).float().unsqueeze(1)
 
         # ------------ Applying constraints ----------------
 
