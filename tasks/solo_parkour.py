@@ -1108,8 +1108,8 @@ class Go2Parkour(VecTask):
                     )
                     - self.Kd * self.dof_vel
                 ),
-                -10.0,  # Hard higher limit on torques
-                10.0,  # Hard lower limit on torques
+                -50.0,  # Hard higher limit on torques
+                50.0,  # Hard lower limit on torques
             )
 
             # Saturating command torques (on Solo we saturate the max currents)
