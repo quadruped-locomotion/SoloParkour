@@ -120,9 +120,9 @@ env:
 
     limits:
       torque: 30.0
-      acc: 800.0
-      vel: 16.0
-      action_rate: 80.0
+      acc: 1200.0
+      vel: 24.0
+      action_rate: 120.0
       base_orientation: 0.1
       foot_contact_force: 480.0
       HFE: 1.9
