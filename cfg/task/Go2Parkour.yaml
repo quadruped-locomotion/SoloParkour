@@ -97,7 +97,7 @@ env:
     armature: 0.00036207 # i.e motor inertia at joint level
 
   learn:
-    allowShinContacts: True
+    allowShinContacts: false
     allowKneeContacts: false
   
     # Scales of rewards
@@ -112,7 +112,7 @@ env:
     # Constraints
     enableConstraints: "cat"  # "none", "cat"
     constraints_CaT:
-      feetAirTimeConstraint: 0.2
+      feetAirTimeConstraint: 0.4
       tauConstraint: 0.95
       minPConstraint: 0.0
       softPConstraint: 0.1
@@ -121,11 +121,11 @@ env:
 
     limits:
       torque: 30.0
-      acc: 1200.0
+      acc: 1000.0
       vel: 24.0
       action_rate: 120.0
       base_orientation: 0.1
-      foot_contact_force: 480.0
+      foot_contact_force: 360.0
       HFE: 1.9
       HFE_min: -0.4
       HAA: 0.3
