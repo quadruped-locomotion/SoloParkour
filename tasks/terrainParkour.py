@@ -148,7 +148,7 @@ class Terrain:
                         gap_length=gap_length,
                         gap_platform_height=0.1
                     )
-                    add_roughness(terrain, np.random.uniform(0.01, 0.03))
+                    # add_roughness(terrain, np.random.uniform(0.01, 0.03))
                 elif self.terrain_keys[k] == "jump_parkour":
                     height = 0.05 + 0.37*difficulty
                     jump_parkour(

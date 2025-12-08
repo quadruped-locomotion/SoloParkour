@@ -35,12 +35,13 @@ env:
     slopeTreshold: 0.2
 
     terrainProportions: # Proportions for each kind of terrain
-      gap_parkour: 0.55
+      gap_parkour: 0.45
       jump_parkour: 0.3
       stairs_parkour: 0.0
       hurdle_parkour: 0.1
       crawl_parkour: 0.05
       random_uniform: 0.0
+      flat_terrain: 0.1
 
   baseInitState:
     pos: [0.0, 0.0, 0.3] # x,y,z [m]
