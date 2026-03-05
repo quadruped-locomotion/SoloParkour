@@ -1,0 +1,3 @@
+[submodule "taichi_depth"]
+	path = taichi_depth
+	url = git@github.com:quadruped-locomotion/taichi_depth.git

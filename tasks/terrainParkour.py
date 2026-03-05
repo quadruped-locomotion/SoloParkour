@@ -12,7 +12,7 @@ class Terrain:
     type of subterrains (slope, stairs, ...) and each row to a given difficulty (from easiest to hardest).
     """
 
-    def __init__(self, cfg, num_robots) -> None:
+    def __init__(self, cfg, num_robots, no_boxes=False) -> None:
 
         self.type = cfg["terrainType"]
         if self.type in ["none", 'plane']:
@@ -60,7 +60,7 @@ class Terrain:
             self.curiculum(num_robots, num_terrains=self.env_cols, num_levels=self.env_rows)
             #self.randomized_terrain()
         self.vertices, self.triangles = convert_heightfield_to_trimesh(self.height_field_raw, self.horizontal_scale, self.vertical_scale, cfg["slopeTreshold"])
-        if len(self.boxes) > 0:
+        if not no_boxes and len(self.boxes) > 0:
             for box in self.boxes:
                 self.vertices, self.triangles = combine_trimeshes((self.vertices, self.triangles), box)
         self.heightsamples = self.height_field_raw

@@ -7,12 +7,17 @@ from isaacgym import gymapi
 import torch
 from typing import Tuple, Dict
 
-from isaacgymenvs.utils.torch_jit_utils import to_torch, get_axis_params, torch_rand_float, normalize, quat_apply, quat_rotate_inverse, quat_rotate, get_euler_xyz, quat_from_euler_xyz
+from isaacgymenvs.utils.torch_jit_utils import to_torch, get_axis_params, torch_rand_float, normalize, quat_apply, quat_rotate_inverse, quat_rotate, get_euler_xyz, quat_from_euler_xyz, quat_mul
 from isaacgymenvs.tasks.base.vec_task import VecTask
 from utils.constraint_manager import ConstraintManager
 from tasks.terrainParkour import Terrain
 from texttable import Texttable
 import itertools
+
+import taichi as ti
+from taichi_depth.renderers.wrapper import GridRenderer
+from taichi_depth.renderers.taichi import generate_rays
+from scipy.ndimage import distance_transform_cdt
 
 class SoloParkour(VecTask):
     """Environment to learn locomotion on complex terrains with the Solo-12 quadruped robot."""
@@ -124,6 +129,15 @@ class SoloParkour(VecTask):
         sizeObs = self.sampleObsSize * self.numHistorySamples
         sizeObsHist = self.sampleObsSize * (1 + (self.numHistorySamples - 1) * self.numHistoryStep)
 
+        # Initialize renderer before super().__init__ which calls create_sim
+        use_depth = self.cfg["env"]["depth"]["use_depth"]
+        if use_depth:
+            self.taichi_renderer = GridRenderer(backend='taichi', device='gpu')
+            self.camera_angles = torch.zeros(self.cfg["env"]["numEnvs"], device=rl_device)
+            self.depth_clip_min = self.cfg["env"]["depth"]["depth_clip_min"]
+            self.depth_clip_max = self.cfg["env"]["depth"]["depth_clip_max"]
+            self.depth_update_interval = self.cfg["env"]["depth"]["update_interval"]
+
         # Option to scale the rewards by the time step
         # for key in self.rew_scales.keys():
         #    self.rew_scales[key] *= self.dt
@@ -226,13 +240,11 @@ class SoloParkour(VecTask):
         self.use_depth = self.cfg["env"]["depth"]["use_depth"]
         if self.use_depth:
             assert self.cfg["env"]["enableCameraSensors"]
-            self.depth_clip_min = self.cfg["env"]["depth"]["depth_clip_min"]
-            self.depth_clip_max = self.cfg["env"]["depth"]["depth_clip_max"]
-            self.depth_update_interval = self.cfg["env"]["depth"]["update_interval"]
             self.depths = torch.zeros(
                     (self.num_envs, self.cfg["env"]["depth"]["image_size"][0], self.cfg["env"]["depth"]["image_size"][1]),
                     dtype=torch.float, device=self.device, requires_grad=False
             )
+            self.depths_taichi = torch.zeros_like(self.depths)
 
         # Default joint positions to which the joint position offsets (actions) are added
         self.default_dof_pos = torch.zeros_like(self.dof_pos, dtype=torch.float, device=self.device, requires_grad=False)
@@ -281,8 +293,15 @@ class SoloParkour(VecTask):
     def _create_trimesh(self):
         """Load a complex trimesh in the simulation, created with the Terrain class."""
 
+        use_depth = self.cfg["env"]["depth"]["use_depth"]
+
+        if use_depth:
+            # Remove crawl_parkour as it has overhanging obstacles not supported by 2.5D renderer
+            if "crawl_parkour" in self.cfg["env"]["terrain"]["terrainProportions"]:
+                self.cfg["env"]["terrain"]["terrainProportions"]["crawl_parkour"] = 0.0
+
         # Create the terrain mesh
-        self.terrain = Terrain(self.cfg["env"]["terrain"], num_robots=self.num_envs)
+        self.terrain = Terrain(self.cfg["env"]["terrain"], num_robots=self.num_envs, no_boxes=use_depth)
         tm_params = gymapi.TriangleMeshParams()
         tm_params.nb_vertices = self.terrain.vertices.shape[0]
         tm_params.nb_triangles = self.terrain.triangles.shape[0]
@@ -296,6 +315,27 @@ class SoloParkour(VecTask):
         # Load the mesh into the simulation and save the whole terrain heightmap for easy access
         self.gym.add_triangle_mesh(self.sim, self.terrain.vertices.flatten(order='C'), self.terrain.triangles.flatten(order='C'), tm_params)   
         self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
+
+        if use_depth:
+            # Precompute L1 distance field for Taichi renderer
+            l1_field_np = distance_transform_cdt(self.terrain.heightsamples == 0, metric='taxicab').astype(np.float32)
+            self.l1_field = ti.ndarray(ti.f32, shape=l1_field_np.shape)
+            self.l1_field.from_numpy(l1_field_np)
+            
+            # Prepare grid for Taichi. Scale to cell units.
+            # Grid cells are square (h_scale x h_scale). Height is raw * v_scale.
+            # To have t in cell units, we need everything in cell units.
+            v_scale = self.terrain.vertical_scale
+            h_scale = self.terrain.horizontal_scale
+            self.ti_grid = ti.ndarray(ti.f32, shape=self.terrain.heightsamples.shape)
+            self.ti_grid.from_numpy(self.terrain.heightsamples * v_scale / h_scale)
+            
+            self.horizontal_scale = h_scale
+            self.border_size = self.terrain.border_size
+            
+            # Pre-allocate depth output buffer for Taichi
+            # GridRenderer expects [B, W, H]
+            self.depth_out_ti = ti.ndarray(ti.f32, shape=(self.num_envs, self.cfg["env"]["depth"]["image_size"][1], self.cfg["env"]["depth"]["image_size"][0]))
 
     def _create_envs(self, num_envs, spacing, num_per_row):
         """Initalize the environments by spawning one robot (the actor) for each env."""
@@ -698,6 +738,7 @@ class SoloParkour(VecTask):
             
             camera_position = np.copy(self.cfg["env"]["depth"]["position"])
             camera_angle = np.random.uniform(self.cfg["env"]["depth"]["angle"][0], self.cfg["env"]["depth"]["angle"][1])
+            self.camera_angles[i] = camera_angle
 
             local_transform.p = gymapi.Vec3(*camera_position)
             local_transform.r = gymapi.Quat.from_euler_zyx(0, np.radians(camera_angle), 0)
@@ -712,23 +753,76 @@ class SoloParkour(VecTask):
         if self.common_step_counter % self.depth_update_interval != 0:
             return
 
-        self.gym.step_graphics(self.sim) # required to render in headless mode
-        self.gym.fetch_results(self.sim, True)
+        # --- TAICHI RENDERER ---
+        # 1. Compute camera global poses
+        cam_local_pos = torch.tensor(self.cfg["env"]["depth"]["position"], device=self.device).repeat(self.num_envs, 1)
+        cam_global_pos = self.base_pos + quat_apply(self.base_quat, cam_local_pos)
+        
+        pitch = torch.deg2rad(self.camera_angles)
+        cam_local_quat = quat_from_euler_xyz(torch.zeros_like(pitch), pitch, torch.zeros_like(pitch))
+        cam_global_quat = quat_mul(self.base_quat, cam_local_quat)
+        
+        # Isaac Gym native uses +X forward, +Z up for its sensors locally when attached with identity rotation
+        local_forward = torch.tensor([1.0, 0.0, 0.0], device=self.device).repeat(self.num_envs, 1)
+        global_forward = quat_apply(cam_global_quat, local_forward)
+        look_at = cam_global_pos + global_forward
+        
+        local_up = torch.tensor([0.0, 0.0, 1.0], device=self.device).repeat(self.num_envs, 1)
+        global_up = quat_apply(cam_global_quat, local_up)
+        
+        # 2. Generate rays
+        B = self.num_envs
+        W, H = self.cfg["env"]["depth"]["image_size"][1], self.cfg["env"]["depth"]["image_size"][0]
+        fov = self.cfg["env"]["depth"]["horizontal_fov"]
+        
+        origins, dirs = generate_rays(B, W, H, cam_global_pos, look_at, global_up, fov, origin='top_left')
+        
+        # 3. Transform rays to grid cell units
+        origins_grid = origins.clone()
+        origins_grid[..., 0] = (origins[..., 0] + self.border_size) / self.horizontal_scale
+        origins_grid[..., 1] = (origins[..., 1] + self.border_size) / self.horizontal_scale
+        origins_grid[..., 2] = origins[..., 2] / self.horizontal_scale
+        
+        # 4. Render with Taichi
+        ti_origins = ti.ndarray(ti.f32, shape=(B, W, H, 3))
+        ti_origins.from_numpy(origins_grid.contiguous().cpu().numpy())
+        
+        ti_dirs = ti.ndarray(ti.f32, shape=(B, W, H, 3))
+        ti_dirs.from_numpy(dirs.contiguous().cpu().numpy())
+        
+        max_height = 200.0  # Safe max height in cell units
+        
+        self.taichi_renderer.render(
+            origins=ti_origins,
+            dirs=ti_dirs,
+            grid=self.ti_grid,
+            l1_field=self.l1_field,
+            max_steps=1000,
+            max_height=max_height,
+            depth_out=self.depth_out_ti
+        )
+        
+        # 5. Process Depth
+        # taichi_depth_meters: [B, W, H]
+        taichi_depth_meters = torch.from_numpy(self.depth_out_ti.to_numpy()).to(self.device) * self.horizontal_scale
+        
+        # Convert ray distance to Z-depth (planar depth)
+        global_forward_expanded = global_forward.unsqueeze(1).unsqueeze(2).expand(B, W, H, 3)
+        cos_theta = (dirs * global_forward_expanded).sum(dim=-1)
+        z_depth = taichi_depth_meters * cos_theta
+        
+        # Transpose back to [B, H, W] for image output
+        depth_image_ti = z_depth.transpose(1, 2)
+        
+        # Handle sky/background where depth might be very large (t_ground for raycast)
+        depth_image_ti = torch.where(depth_image_ti < 0, torch.tensor(10.0, device=self.device), depth_image_ti)
+        
+        # Clip and Normalize exactly like the original code
+        # Original code used: (torch.clip(-depth_image, min=self.depth_clip_min, max=self.depth_clip_max) - self.depth_clip_min) / (self.depth_clip_max - self.depth_clip_min)
+        # Because Isaac Gym native depth is negative. Taichi depth is positive, so we use it directly:
+        depth_image_ti = (torch.clip(depth_image_ti, min=self.depth_clip_min, max=self.depth_clip_max) - self.depth_clip_min) / (self.depth_clip_max - self.depth_clip_min)
 
-        self.gym.render_all_camera_sensors(self.sim)
-        self.gym.start_access_image_tensors(self.sim)
-
-        for i in range(self.num_envs):
-            depth_image_ = self.gym.get_camera_image_gpu_tensor(self.sim, 
-                                                                self.envs[i], 
-                                                                self.cam_handles[i],
-                                                                gymapi.IMAGE_DEPTH)
-            
-            depth_image = gymtorch.wrap_tensor(depth_image_)
-            depth_image = (torch.clip(-depth_image, min=self.depth_clip_min, max=self.depth_clip_max) - self.depth_clip_min) / (self.depth_clip_max - self.depth_clip_min)
-            self.depths[i] = depth_image
-
-        self.gym.end_access_image_tensors(self.sim)
+        self.depths = depth_image_ti
         self.extras["depth"] = self.depths
 
     ####################
