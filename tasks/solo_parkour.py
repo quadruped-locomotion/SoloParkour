@@ -336,6 +336,10 @@ class SoloParkour(VecTask):
             self.horizontal_scale = h_scale
             self.border_size = self.terrain.border_size
             
+            # Buffers for native renderer
+            if self.enable_camera_sensors:
+                self.native_depths = torch.zeros((self.num_envs, self.cfg["env"]["depth"]["image_size"][0], self.cfg["env"]["depth"]["image_size"][1]), device=self.device)
+
             # Pre-allocate depth output buffer for Taichi
             # GridRenderer expects [B, W, H]
             self.depth_out_ti = torch.zeros((self.num_envs, self.cfg["env"]["depth"]["image_size"][1], self.cfg["env"]["depth"]["image_size"][0]), device=self.device, dtype=torch.float32)
@@ -750,10 +754,25 @@ class SoloParkour(VecTask):
             self.gym.attach_camera_to_body(camera_handle, env_handle, root_handle, local_transform, gymapi.FOLLOW_TRANSFORM)
 
     def update_depth_buffer(self):
-        if not self.use_depth:
+        if not self.use_depth and not self.enable_camera_sensors:
             return
 
         if self.common_step_counter % self.depth_update_interval != 0:
+            return
+
+        # --- NATIVE RENDERER ---
+        if self.enable_camera_sensors:
+            self.gym.render_all_camera_sensors(self.sim)
+            self.gym.start_access_image_tensors(self.sim)
+            for i in range(self.num_envs):
+                depth_ptr = self.gym.get_camera_image_gpu_tensor(self.sim, self.envs[i], self.cam_handles[i], gymapi.IMAGE_DEPTH)
+                depth_tensor = gymtorch.wrap_tensor(depth_ptr)
+                # Isaac native depth is negative, flip and clip
+                self.native_depths[i] = torch.clip(-depth_tensor, 0.0, 10.0)
+            self.gym.end_access_image_tensors(self.sim)
+            self.extras["native_depth"] = self.native_depths
+
+        if not self.use_depth:
             return
 
         # --- TAICHI RENDERER ---

@@ -675,6 +675,31 @@ def eval_DDPG_demos_rnn_vision(cfg: DictConfig, envs):
             actions = actions.squeeze(1)
 
         next_obs_privi, rewards, terminations, infos = envs.step(actions)
+        
+        # Display side-by-side rendering
+        if "depth" in infos and "native_depth" in infos:
+            # Taichi depth (normalized 0-1)
+            taichi_vis = (infos["depth"][0] * 255).to(torch.uint8).cpu().numpy()
+            taichi_vis = cv2.applyColorMap(taichi_vis, cv2.COLORMAP_MAGMA)
+            
+            # Native depth (raw meters, clip to 5m for visibility)
+            native_raw = infos["native_depth"][0]
+            native_vis = (torch.clip(native_raw, 0, 5.0) / 5.0 * 255).to(torch.uint8).cpu().numpy()
+            native_vis = cv2.applyColorMap(native_vis, cv2.COLORMAP_MAGMA)
+            
+            # Resize native to match taichi size if needed
+            if native_vis.shape[:2] != taichi_vis.shape[:2]:
+                native_vis = cv2.resize(native_vis, (taichi_vis.shape[1], taichi_vis.shape[0]))
+            
+            # Concatenate and Show
+            combined = np.hstack([taichi_vis, native_vis])
+            # Add labels
+            cv2.putText(combined, "Taichi", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(combined, "Native", (taichi_vis.shape[1] + 10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            
+            cv2.imshow("Depth Comparison (Taichi | Native)", combined)
+            cv2.waitKey(1)
+
         next_obs = next_obs_privi.clone()[:, : 45]
         obs = next_obs
         if "depth" in infos:
