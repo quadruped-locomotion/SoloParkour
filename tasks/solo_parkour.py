@@ -253,6 +253,9 @@ class SoloParkour(VecTask):
             angle = self.named_default_joint_angles[name]
             self.default_dof_pos[:, i] = angle
 
+        if self.use_depth:
+            self.prepare_local_rays()
+
         # Logging rewards over the whole episodes (cumulative sum)
         torch_zeros = lambda : torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
         self.episode_sums = {"lin_vel": torch_zeros()}
@@ -335,7 +338,7 @@ class SoloParkour(VecTask):
             
             # Pre-allocate depth output buffer for Taichi
             # GridRenderer expects [B, W, H]
-            self.depth_out_ti = ti.ndarray(ti.f32, shape=(self.num_envs, self.cfg["env"]["depth"]["image_size"][1], self.cfg["env"]["depth"]["image_size"][0]))
+            self.depth_out_ti = torch.zeros((self.num_envs, self.cfg["env"]["depth"]["image_size"][1], self.cfg["env"]["depth"]["image_size"][0]), device=self.device, dtype=torch.float32)
 
     def _create_envs(self, num_envs, spacing, num_per_row):
         """Initalize the environments by spawning one robot (the actor) for each env."""
@@ -762,20 +765,16 @@ class SoloParkour(VecTask):
         cam_local_quat = quat_from_euler_xyz(torch.zeros_like(pitch), pitch, torch.zeros_like(pitch))
         cam_global_quat = quat_mul(self.base_quat, cam_local_quat)
         
-        # Isaac Gym native uses +X forward, +Z up for its sensors locally when attached with identity rotation
-        local_forward = torch.tensor([1.0, 0.0, 0.0], device=self.device).repeat(self.num_envs, 1)
-        global_forward = quat_apply(cam_global_quat, local_forward)
-        look_at = cam_global_pos + global_forward
-        
-        local_up = torch.tensor([0.0, 0.0, 1.0], device=self.device).repeat(self.num_envs, 1)
-        global_up = quat_apply(cam_global_quat, local_up)
-        
-        # 2. Generate rays
+        # 2. Rotate pre-calculated local rays to world space
         B = self.num_envs
         W, H = self.cfg["env"]["depth"]["image_size"][1], self.cfg["env"]["depth"]["image_size"][0]
-        fov = self.cfg["env"]["depth"]["horizontal_fov"]
         
-        origins, dirs = generate_rays(B, W, H, cam_global_pos, look_at, global_up, fov, origin='top_left')
+        # Expand and reshape for quat_apply
+        cam_global_quat_expanded = cam_global_quat.unsqueeze(1).unsqueeze(2).expand(B, W, H, 4).reshape(-1, 4)
+        local_dirs_expanded = self.local_dirs.unsqueeze(0).expand(B, W, H, 3).reshape(-1, 3)
+        
+        dirs = quat_apply(cam_global_quat_expanded, local_dirs_expanded).reshape(B, W, H, 3)
+        origins = cam_global_pos.view(B, 1, 1, 3).expand(B, W, H, 3)
         
         # 3. Transform rays to grid cell units
         origins_grid = origins.clone()
@@ -784,11 +783,8 @@ class SoloParkour(VecTask):
         origins_grid[..., 2] = origins[..., 2] / self.horizontal_scale
         
         # 4. Render with Taichi
-        ti_origins = ti.ndarray(ti.f32, shape=(B, W, H, 3))
-        ti_origins.from_numpy(origins_grid.contiguous().cpu().numpy())
-        
-        ti_dirs = ti.ndarray(ti.f32, shape=(B, W, H, 3))
-        ti_dirs.from_numpy(dirs.contiguous().cpu().numpy())
+        ti_origins = origins_grid.contiguous()
+        ti_dirs = dirs.contiguous()
         
         max_height = 200.0  # Safe max height in cell units
         
@@ -804,11 +800,12 @@ class SoloParkour(VecTask):
         
         # 5. Process Depth
         # taichi_depth_meters: [B, W, H]
-        taichi_depth_meters = torch.from_numpy(self.depth_out_ti.to_numpy()).to(self.device) * self.horizontal_scale
+        taichi_depth_meters = self.depth_out_ti * self.horizontal_scale
         
         # Convert ray distance to Z-depth (planar depth)
-        global_forward_expanded = global_forward.unsqueeze(1).unsqueeze(2).expand(B, W, H, 3)
-        cos_theta = (dirs * global_forward_expanded).sum(dim=-1)
+        # Using pre-calculated local_dirs[..., 0] is faster than global forward dot product
+        # local_dirs[..., 0] is the cosine of the angle since local_dirs is normalized and forward is [1, 0, 0]
+        cos_theta = self.local_dirs[..., 0].unsqueeze(0).expand(B, W, H)
         z_depth = taichi_depth_meters * cos_theta
         
         # Transpose back to [B, H, W] for image output
@@ -824,6 +821,32 @@ class SoloParkour(VecTask):
 
         self.depths = depth_image_ti
         self.extras["depth"] = self.depths
+
+    def prepare_local_rays(self):
+        W, H = self.cfg["env"]["depth"]["image_size"][1], self.cfg["env"]["depth"]["image_size"][0]
+        fov_deg = self.cfg["env"]["depth"]["horizontal_fov"]
+        fov_rad = fov_deg * (np.pi / 180.0)
+        device = self.device
+        
+        v, u = torch.meshgrid(torch.linspace(1, -1, H, device=device), torch.linspace(-1, 1, W, device=device), indexing='ij')
+        
+        tan_half_fov = np.tan(fov_rad / 2)
+        ratio = H / W
+        
+        dirs_local = torch.zeros((H, W, 3), device=device)
+        # Camera local coordinates: +X forward, +Y left, +Z up
+        # u is horizontal (-1 to 1), v is vertical (1 to -1)
+        # dirs_world = u*tan*right + v*tan*ratio*up + forward
+        # right is [0, -1, 0], up is [0, 0, 1], forward is [1, 0, 0]
+        dirs_local[..., 0] = 1.0
+        dirs_local[..., 1] = -u * tan_half_fov
+        dirs_local[..., 2] = v * tan_half_fov * ratio
+        
+        # Normalize to unit vectors
+        dirs_local = torch.nn.functional.normalize(dirs_local, dim=-1)
+        
+        # GridRenderer expects [B, W, H, 3] so we transpose [H, W, 3] to [W, H, 3]
+        self.local_dirs = dirs_local.transpose(0, 1).contiguous()
 
     ####################
     # Rewards
